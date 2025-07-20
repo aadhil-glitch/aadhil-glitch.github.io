@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -168,7 +167,7 @@
             <div class="bg-sepia-surface dark:bg-surface p-6 rounded-lg shadow-lg">
               <h2 class="text-2xl font-bold mb-4">Record an Expense</h2>
               <form id="record-expense-form" class="space-y-4">
-                 <div>
+                  <div>
                   <label for="expense-description" class="block text-sm font-medium text-sepia-text-secondary dark:text-text-secondary">Description</label>
                   <input type="text" id="expense-description" name="description" required class="mt-1 block w-full bg-sepia-bg dark:bg-secondary border border-sepia-border dark:border-gray-600 rounded-md py-2 px-3 text-sepia-text dark:text-text-primary focus:outline-none focus:ring-sepia-primary dark:focus:ring-primary focus:border-sepia-primary dark:focus:border-primary">
                 </div>
@@ -253,7 +252,7 @@
       </div>
     </div>
 
-     <!-- Add Store Modal -->
+      <!-- Add Store Modal -->
     <div id="addStoreModal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden">
       <div class="bg-sepia-surface dark:bg-surface rounded-lg shadow-xl p-8 w-full max-w-md relative">
         <button class="absolute top-4 right-4 text-sepia-text-secondary dark:text-text-secondary hover:text-sepia-text dark:hover:text-text-primary" onclick="app.closeModal('addStoreModal')"><i class="fas fa-times"></i></button>
@@ -360,9 +359,10 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('add-employee-form').addEventListener('submit', e => this.handleAddEmployee(e));
       document.getElementById('add-store-form').addEventListener('submit', e => this.handleAddStore(e));
       document.getElementById('assign-stores-form').addEventListener('submit', e => this.handleAssignStores(e));
-      document.getElementById('add-product-form').addEventListener('submit', e => this.handleAddProduct(e));
-      document.getElementById('delegate-stock-form').addEventListener('submit', e => this.handleDelegateStock(e));
-      document.getElementById('create-task-form').addEventListener('submit', e => this.handleCreateTask(e));
+      // Add other event listeners for new forms here
+      // document.getElementById('add-product-form').addEventListener('submit', e => this.handleAddProduct(e));
+      // document.getElementById('delegate-stock-form').addEventListener('submit', e => this.handleDelegateStock(e));
+      // document.getElementById('create-task-form').addEventListener('submit', e => this.handleCreateTask(e));
       document.getElementById('record-sale-form').addEventListener('submit', e => this.handleRecordSale(e));
       document.getElementById('record-expense-form').addEventListener('submit', e => this.handleRecordExpense(e));
     },
@@ -461,13 +461,53 @@ document.addEventListener('DOMContentLoaded', () => {
       tabsContainer.innerHTML = tabs.map(tab => `<button data-tab="${tab.id}" class="tab-button text-sepia-text-secondary dark:text-text-secondary hover:text-sepia-text dark:hover:text-text-primary hover:bg-sepia-surface dark:hover:bg-secondary py-3 px-4 font-medium text-sm rounded-t-lg"><i class="fas ${tab.icon} mr-2 hidden md:inline"></i>${tab.name}</button>`).join('');
     },
 
-    renderDashboard() { /* ... Function content is unchanged ... */ },
-    renderMyTasks() { /* ... Function content is unchanged ... */ },
-    renderMyInventory() { /* ... Function content is unchanged ... */ },
-    renderInvoices() { /* ... Function content is unchanged ... */ },
-    renderLedger() { /* ... Function content is unchanged ... */ },
-    renderStoresTab() { /* ... Function content is unchanged ... */ },
-    renderSalesAndExpenses() { /* ... Function content is unchanged ... */ },
+    renderDashboard() { document.getElementById('dashboard-content').innerHTML = `<div>Dashboard content for ${this.getEmployee(this.state.currentEmployeeId)?.name || ''}</div>`; },
+    renderMyTasks() { document.getElementById('my-tasks-content').innerHTML = `<div>Task list for ${this.getEmployee(this.state.currentEmployeeId)?.name || ''}</div>`; },
+    renderMyInventory() { document.getElementById('my-inventory-content').innerHTML = `<div>Inventory list for ${this.getEmployee(this.state.currentEmployeeId)?.name || ''}</div>`; },
+    renderInvoices() { document.getElementById('invoices-content').innerHTML = `<div>Invoices for ${this.getEmployee(this.state.currentEmployeeId)?.name || ''}</div>`; },
+    renderLedger() { document.getElementById('ledger-content').innerHTML = `<div>Ledger for ${this.getEmployee(this.state.currentEmployeeId)?.name || ''}</div>`; },
+    renderStoresTab() {
+        const listEl = document.getElementById('stores-tab-list');
+        const sortedStores = [...this.state.stores].sort((a,b) => a.name.localeCompare(b.name));
+        if (sortedStores.length === 0) {
+            listEl.innerHTML = `<tr><td colspan="2" class="text-center p-6 text-sepia-text-secondary dark:text-gray-400">No stores have been added yet.</td></tr>`;
+            return;
+        }
+        listEl.innerHTML = sortedStores.map(store => `
+            <tr class="text-sepia-text dark:text-text-primary">
+                <td class="px-6 py-4 whitespace-nowrap">${store.name}</td>
+                <td class="px-6 py-4 whitespace-nowrap">
+                    <button class="text-sepia-primary hover:text-sepia-primary-hover dark:text-primary dark:hover:text-primary-hover" onclick="app.handleDelete('store', '${store.id}')">Delete</button>
+                </td>
+            </tr>
+        `).join('');
+    },
+    renderSalesAndExpenses() {
+        const storeSelect = document.getElementById('sale-store');
+        const productSelect = document.getElementById('sale-product');
+        const currentEmployee = this.getEmployee(this.state.currentEmployeeId);
+
+        // Populate stores dropdown
+        if (currentEmployee && currentEmployee.storeAccess && currentEmployee.storeAccess.length > 0) {
+            storeSelect.innerHTML = currentEmployee.storeAccess.map(storeId => {
+                const store = this.getStore(storeId);
+                return store ? `<option value="${store.id}">${store.name}</option>` : '';
+            }).join('');
+            storeSelect.disabled = false;
+        } else {
+            storeSelect.innerHTML = `<option disabled selected>No stores assigned</option>`;
+            storeSelect.disabled = true;
+        }
+
+        // Populate products dropdown
+        if (this.state.masterInventory.length > 0) {
+            productSelect.innerHTML = this.state.masterInventory.map(prod => `<option value="${prod.id}">${prod.name}</option>`).join('');
+            productSelect.disabled = false;
+        } else {
+            productSelect.innerHTML = `<option disabled selected>No products available</option>`;
+            productSelect.disabled = true;
+        }
+    },
 
     setActiveTab(tabName) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
@@ -686,4 +726,3 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
-```
