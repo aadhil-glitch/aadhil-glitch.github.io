@@ -554,41 +554,53 @@ document.addEventListener('DOMContentLoaded', () => {
         },
         
         renderCompanyOverview() {
-            // Employees
-            const employeeList = document.getElementById('employee-list');
-            employeeList.innerHTML = this.state.employees.map(emp => 
-                `<li class="flex justify-between items-center bg-sepia-bg dark:bg-secondary p-2 rounded">
-                    <span class="text-sepia-text dark:text-text-primary">${emp.name} <em class="text-sepia-text-secondary dark:text-gray-400 text-xs">(${emp.position})</em></span>
-                </li>`
-            ).join('') || `<p class="text-sepia-text-secondary dark:text-gray-400 text-sm">No employees yet.</p>`;
+      // Employees
+      const employeeList = document.getElementById('employee-list');
+      employeeList.innerHTML = this.state.employees.map(emp => 
+        `<li class="flex justify-between items-center bg-sepia-bg dark:bg-secondary p-2 rounded">
+          <div>
+            <span class="text-sepia-text dark:text-text-primary">${emp.name}</span>
+            <em class="text-sepia-text-secondary dark:text-gray-400 text-xs">(${emp.position})</em>
+          </div>
+          <div>
+            <i class="fas fa-trash action-icon danger" onclick="app.handleDelete('employee', '${emp.id}')"></i>
+          </div>
+        </li>`
+      ).join('') || `<p class="text-sepia-text-secondary dark:text-gray-400 text-sm">No employees yet.</p>`;
 
-            // Stores
-            const storeList = document.getElementById('store-list');
-            storeList.innerHTML = this.state.stores.map(store => 
-                `<li class="flex justify-between items-center bg-sepia-bg dark:bg-secondary p-2 rounded">
-                    <span class="text-sepia-text dark:text-text-primary">${store.name}</span>
-                </li>`
-            ).join('') || `<p class="text-sepia-text-secondary dark:text-gray-400 text-sm">No stores added yet.</p>`;
+      // Stores
+      const storeList = document.getElementById('store-list');
+      storeList.innerHTML = this.state.stores.map(store => 
+        `<li class="flex justify-between items-center bg-sepia-bg dark:bg-secondary p-2 rounded">
+          <span class="text-sepia-text dark:text-text-primary">${store.name}</span>
+          <div>
+            <i class="fas fa-trash action-icon danger" onclick="app.handleDelete('store', '${store.id}')"></i>
+          </div>
+        </li>`
+      ).join('') || `<p class="text-sepia-text-secondary dark:text-gray-400 text-sm">No stores added yet.</p>`;
 
-            // Master Inventory
-            const inventoryList = document.getElementById('master-inventory-list');
-            inventoryList.innerHTML = this.state.masterInventory.map(prod => `
-                <div class="flex justify-between items-center bg-sepia-bg dark:bg-secondary p-2 rounded">
-                    <span class="text-sepia-text dark:text-text-primary">${prod.name}</span>
-                    <span class="font-mono text-xs bg-sepia-border dark:bg-gray-700 px-2 py-1 rounded">${prod.stock}</span>
-                </div>`
-            ).join('') || `<p class="text-sepia-text-secondary dark:text-gray-400 text-sm">No products in inventory.</p>`;
+      // Master Inventory
+      const inventoryList = document.getElementById('master-inventory-list');
+      inventoryList.innerHTML = this.state.masterInventory.map(prod => `
+        <div class="flex justify-between items-center bg-sepia-bg dark:bg-secondary p-2 rounded">
+          <span class="text-sepia-text dark:text-text-primary">${prod.name}</span>
+          <div class="flex items-center">
+            <span class="font-mono text-xs bg-sepia-border dark:bg-gray-700 px-2 py-1 rounded">${prod.stock}</span>
+            <i class="fas fa-trash action-icon danger" onclick="app.handleDelete('product', '${prod.id}')"></i>
+          </div>
+        </div>`
+      ).join('') || `<p class="text-sepia-text-secondary dark:text-gray-400 text-sm">No products in inventory.</p>`;
 
-            // All Tasks
-            const allTasksList = document.getElementById('all-tasks-list');
-            allTasksList.innerHTML = this.state.tasks.map(task => {
-                const assignee = this.getEmployee(task.assigneeId);
-                return `<li class="bg-sepia-bg dark:bg-secondary p-2 rounded text-sepia-text dark:text-gray-300 ${task.status === 'Completed' ? 'task-completed' : ''}">
-                    <p>${task.description}</p>
-                    <small class="text-sepia-text-secondary dark:text-gray-400">Assigned to: ${assignee ? assignee.name : 'Unassigned'}</small>
-                </li>`
-            }).join('') || `<p class="text-sepia-text-secondary dark:text-gray-400 text-sm">No tasks created.</p>`;
-        },
+      // All Tasks (no changes here, just for context)
+      const allTasksList = document.getElementById('all-tasks-list');
+      allTasksList.innerHTML = this.state.tasks.map(task => {
+        const assignee = this.getEmployee(task.assigneeId);
+        return `<li class="bg-sepia-bg dark:bg-secondary p-2 rounded text-sepia-text dark:text-gray-300 ${task.status === 'Completed' ? 'task-completed' : ''}">
+          <p>${task.description}</p>
+          <small class="text-sepia-text-secondary dark:text-gray-400">Assigned to: ${assignee ? assignee.name : 'Unassigned'}</small>
+        </li>`
+      }).join('') || `<p class="text-sepia-text-secondary dark:text-gray-400 text-sm">No tasks created.</p>`;
+    },
         
         renderAIAdvisorPanel() {
              const aiSwitcher = document.getElementById('ai-employee-select');
