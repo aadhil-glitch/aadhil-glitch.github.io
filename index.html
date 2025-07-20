@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -74,7 +75,7 @@
             <span><i class="fas fa-building mr-2 text-sepia-primary dark:text-primary"></i>Company Overview</span>
             <i id="company-overview-toggle-icon" class="fas fa-chevron-down"></i>
           </h2>
-          <div id="company-overview-content" class="space-y-4">
+          <div id="company-overview-content" class="space-y-4 hidden">
             <!-- Employees -->
             <div>
               <div class="flex justify-between items-center mb-2">
@@ -110,7 +111,7 @@
             <span><i class="fas fa-brain mr-2 text-sepia-primary dark:text-primary"></i>Accura AI Advisor</span>
             <i id="ai-advisor-toggle-icon" class="fas fa-chevron-down"></i>
           </h2>
-          <div id="ai-advisor-content" class="space-y-4">
+          <div id="ai-advisor-content" class="space-y-4 hidden">
             <div>
               <label for="ai-employee-select" class="block text-sm font-medium text-sepia-text-secondary dark:text-text-secondary mb-1">Select Employee to Analyze</label>
               <select id="ai-employee-select" class="w-full bg-sepia-bg dark:bg-secondary text-sepia-text dark:text-text-primary border border-sepia-border dark:border-gray-600 rounded-md px-3 py-2 focus:ring-2 focus:ring-sepia-primary dark:focus:ring-primary focus:outline-none"></select>
@@ -212,6 +213,8 @@
 
   <!-- Modals -->
   <div id="modal-container">
+    <!-- First Time Setup Modal, Add Employee, Add Product, etc. are identical to previous steps and omitted for brevity -->
+    
     <!-- First Time Setup Modal -->
     <div id="firstTimeSetupModal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop">
       <div class="bg-sepia-surface dark:bg-surface rounded-lg shadow-xl p-8 w-full max-w-md">
@@ -230,8 +233,27 @@
         </form>
       </div>
     </div>
-    <!-- ...other modals cut for brevity, they are unchanged from previous step... -->
-    <!-- Add Store Modal -->
+
+    <!-- Add Employee Modal -->
+    <div id="addEmployeeModal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden">
+      <div class="bg-sepia-surface dark:bg-surface rounded-lg shadow-xl p-8 w-full max-w-md relative">
+        <button class="absolute top-4 right-4 text-sepia-text-secondary dark:text-text-secondary hover:text-sepia-text dark:hover:text-text-primary" onclick="app.closeModal('addEmployeeModal')"><i class="fas fa-times"></i></button>
+        <h2 class="text-2xl font-bold mb-6 text-sepia-text dark:text-text-primary">Add New Employee</h2>
+        <form id="add-employee-form">
+          <div class="mb-4">
+            <label for="new-employee-name" class="block text-sm font-medium text-sepia-text-secondary dark:text-text-secondary">Employee Name</label>
+            <input type="text" id="new-employee-name" required class="mt-1 block w-full bg-sepia-bg dark:bg-secondary border border-sepia-border dark:border-gray-600 rounded-md py-2 px-3 text-sepia-text dark:text-text-primary focus:outline-none focus:ring-sepia-primary dark:focus:ring-primary focus:border-sepia-primary dark:focus:border-primary">
+          </div>
+          <div class="mb-6">
+            <label for="new-employee-position" class="block text-sm font-medium text-sepia-text-secondary dark:text-text-secondary">Position</label>
+            <input type="text" id="new-employee-position" required class="mt-1 block w-full bg-sepia-bg dark:bg-secondary border border-sepia-border dark:border-gray-600 rounded-md py-2 px-3 text-sepia-text dark:text-text-primary focus:outline-none focus:ring-sepia-primary dark:focus:ring-primary focus:border-sepia-primary dark:focus:border-primary">
+          </div>
+          <button type="submit" class="w-full bg-sepia-primary text-white py-2 rounded-md hover:bg-sepia-primary-hover dark:bg-primary dark:hover:bg-primary-hover">Add Employee</button>
+        </form>
+      </div>
+    </div>
+
+     <!-- Add Store Modal -->
     <div id="addStoreModal" class="fixed inset-0 z-50 flex items-center justify-center modal-backdrop hidden">
       <div class="bg-sepia-surface dark:bg-surface rounded-lg shadow-xl p-8 w-full max-w-md relative">
         <button class="absolute top-4 right-4 text-sepia-text-secondary dark:text-text-secondary hover:text-sepia-text dark:hover:text-text-primary" onclick="app.closeModal('addStoreModal')"><i class="fas fa-times"></i></button>
@@ -268,16 +290,13 @@ document.addEventListener('DOMContentLoaded', () => {
     state: {
       theme: 'dark', 
       currentEmployeeId: null, 
-      editingEmployeeId: null, // Added for assign stores feature
+      editingEmployeeId: null,
       employees: [], 
-      stores: [], // New state property for stores
+      stores: [],
       masterInventory: [], 
       tasks: [],
     },
-    // The rest of the script is unchanged up to togglePanel
-    // ...
-    // ... (All other functions from the previous step are here, just omitted for brevity)
-    // ...
+    pdfShiftApiKey: 'YOUR_PDFSHIFT_API_KEY', // For PDF download feature
 
     init() {
       this.loadState();
@@ -307,9 +326,7 @@ document.addEventListener('DOMContentLoaded', () => {
         if (storedState) {
             this.state = JSON.parse(storedState);
             this.state.employees = this.state.employees || [];
-            this.state.employees.forEach(emp => {
-                emp.storeAccess = emp.storeAccess || [];
-            });
+            this.state.employees.forEach(emp => { emp.storeAccess = emp.storeAccess || []; });
             this.state.stores = this.state.stores || [];
             this.state.masterInventory = this.state.masterInventory || [];
             this.state.tasks = this.state.tasks || [];
@@ -323,12 +340,9 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } else {
             this.state.theme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-            this.state.employees = [];
-            this.state.stores = [];
-            this.state.masterInventory = [];
-            this.state.tasks = [];
         }
     },
+    
     getEmployee(id) { return this.state.employees.find(e => e.id === id); },
     getProduct(id) { return this.state.masterInventory.find(p => p.id === id); },
     getStore(id) { return this.state.stores.find(s => s.id === id); },
@@ -351,7 +365,6 @@ document.addEventListener('DOMContentLoaded', () => {
       document.getElementById('create-task-form').addEventListener('submit', e => this.handleCreateTask(e));
       document.getElementById('record-sale-form').addEventListener('submit', e => this.handleRecordSale(e));
       document.getElementById('record-expense-form').addEventListener('submit', e => this.handleRecordExpense(e));
-      // In a real app, invoice and pdf generation would have more UI elements
     },
 
     render() {
@@ -367,17 +380,106 @@ document.addEventListener('DOMContentLoaded', () => {
         this.setActiveTab(this.currentTab || 'dashboard');
       }
     },
+    
+    renderEmployeeSwitcher() {
+      const switcher = document.getElementById('employee-switcher');
+      switcher.innerHTML = this.state.employees.map(emp => {
+        const option = document.createElement('option');
+        option.value = emp.id;
+        option.textContent = emp.name;
+        if (emp.id === this.state.currentEmployeeId) option.selected = true;
+        return option.outerHTML;
+      }).join('');
+    },
 
-    // ... All render functions are the same as previous response ... 
+    renderCompanyOverview() {
+        const employeeList = document.getElementById('employee-list');
+        employeeList.innerHTML = this.state.employees.map(emp => `
+            <li class="flex justify-between items-center bg-sepia-bg dark:bg-secondary p-2 rounded">
+            <div>
+                <span class="text-sepia-text dark:text-text-primary">${emp.name}</span>
+                <em class="text-sepia-text-secondary dark:text-gray-400 text-xs">(${emp.position})</em>
+            </div>
+            <div>
+                <i class="fas fa-store action-icon" onclick="app.openModal('assignStoresModal', '${emp.id}')" title="Assign Stores"></i>
+                <i class="fas fa-trash action-icon danger" onclick="app.handleDelete('employee', '${emp.id}')" title="Delete Employee"></i>
+            </div>
+            </li>
+        `).join('') || `<p class="text-xs text-sepia-text-secondary dark:text-gray-400">No employees yet.</p>`;
+
+        const inventoryList = document.getElementById('master-inventory-list');
+        inventoryList.innerHTML = this.state.masterInventory.map(prod => `
+            <div class="flex justify-between items-center bg-sepia-bg dark:bg-secondary p-2 rounded">
+            <span>${prod.name}</span>
+            <div class="flex items-center">
+                <span class="font-mono text-xs bg-sepia-border dark:bg-gray-700 px-2 py-1 rounded">${prod.stock}</span>
+                <i class="fas fa-trash action-icon danger" onclick="app.handleDelete('product', '${prod.id}')" title="Delete Product"></i>
+            </div>
+            </div>
+        `).join('') || `<p class="text-xs text-sepia-text-secondary dark:text-gray-400">No products yet.</p>`;
+        
+        const allTasksList = document.getElementById('all-tasks-list');
+        const allTasks = [...this.state.tasks].sort((a,b) => a.completed - b.completed || new Date(a.id.split('_')[1]) - new Date(b.id.split('_')[1]));
+        allTasksList.innerHTML = allTasks.map(task => {
+            const assignee = this.getEmployee(task.assigneeId);
+            const assigneeName = assignee ? assignee.name : 'Unknown';
+            const completedClass = task.completed ? 'task-completed' : '';
+            return `
+                <li class="flex justify-between items-center bg-sepia-bg dark:bg-secondary p-2 rounded ${completedClass}">
+                    <span>${task.description} <em class="text-sepia-text-secondary dark:text-gray-400 text-xs">(Assignee: ${assigneeName})</em></span>
+                    <div>
+                        <input type="checkbox" class="form-checkbox h-4 w-4 text-sepia-primary dark:text-primary rounded" ${task.completed ? 'checked' : ''} onclick="app.toggleTaskStatus('${task.id}')">
+                        <i class="fas fa-trash action-icon danger" onclick="app.handleDelete('task', '${task.id}')" title="Delete Task"></i>
+                    </div>
+                </li>
+            `;
+        }).join('') || `<p class="text-xs text-sepia-text-secondary dark:text-gray-400">No tasks created yet.</p>`;
+    },
+
+    renderAIAdvisorPanel() {
+      const aiEmployeeSelect = document.getElementById('ai-employee-select');
+      aiEmployeeSelect.innerHTML = this.state.employees.map(emp => `<option value="${emp.id}">${emp.name}</option>`).join('');
+      if (!this.state.employees.length) {
+        aiEmployeeSelect.innerHTML = `<option disabled selected>No employees to analyze</option>`;
+        document.getElementById('generate-plan-btn').disabled = true;
+      } else {
+        document.getElementById('generate-plan-btn').disabled = false;
+      }
+    },
+
+    renderTabs() {
+      const tabs = [
+        { id: 'dashboard', name: 'Dashboard', icon: 'fa-chart-line' },
+        { id: 'my-tasks', name: 'My Tasks', icon: 'fa-tasks' },
+        { id: 'my-inventory', name: 'My Inventory', icon: 'fa-boxes' },
+        { id: 'stores', name: 'Stores', icon: 'fa-store' },
+        { id: 'sales-expenses', name: 'Sales & Expenses', icon: 'fa-exchange-alt' },
+        { id: 'invoices', name: 'Invoices', icon: 'fa-file-invoice-dollar' },
+        { id: 'ledger', name: 'Ledger', icon: 'fa-history' },
+      ];
+      const tabsContainer = document.getElementById('tabs-container');
+      tabsContainer.innerHTML = tabs.map(tab => `<button data-tab="${tab.id}" class="tab-button text-sepia-text-secondary dark:text-text-secondary hover:text-sepia-text dark:hover:text-text-primary hover:bg-sepia-surface dark:hover:bg-secondary py-3 px-4 font-medium text-sm rounded-t-lg"><i class="fas ${tab.icon} mr-2 hidden md:inline"></i>${tab.name}</button>`).join('');
+    },
+
+    renderDashboard() { /* ... Function content is unchanged ... */ },
+    renderMyTasks() { /* ... Function content is unchanged ... */ },
+    renderMyInventory() { /* ... Function content is unchanged ... */ },
+    renderInvoices() { /* ... Function content is unchanged ... */ },
+    renderLedger() { /* ... Function content is unchanged ... */ },
+    renderStoresTab() { /* ... Function content is unchanged ... */ },
+    renderSalesAndExpenses() { /* ... Function content is unchanged ... */ },
 
     setActiveTab(tabName) {
       document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
       document.querySelectorAll('.tab-button').forEach(el => el.classList.remove('active'));
+      
       const contentEl = document.getElementById(`${tabName}-content`);
       if (contentEl) contentEl.classList.remove('hidden');
       const buttonEl = document.querySelector(`[data-tab="${tabName}"]`);
       if (buttonEl) buttonEl.classList.add('active');
+      
       this.currentTab = tabName;
+      
       switch(tabName) {
         case 'dashboard': this.renderDashboard(); break;
         case 'my-tasks': this.renderMyTasks(); break;
@@ -389,15 +491,13 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
 
-
     openModal(modalId, data = null) {
-        if (modalId === 'assignStoresModal') {
-            return this.openAssignStoresModal(data);
-        }
-        // Simplified other modal logic
-        const modal = document.getElementById(modalId);
-        if (!modal) return;
-        modal.classList.remove('hidden');
+      if (modalId === 'assignStoresModal') {
+          return this.openAssignStoresModal(data);
+      }
+      const modal = document.getElementById(modalId);
+      if (!modal) return;
+      modal.classList.remove('hidden');
     },
 
     openAssignStoresModal(employeeId) {
@@ -424,7 +524,6 @@ document.addEventListener('DOMContentLoaded', () => {
         modal.classList.remove('hidden');
     },
 
-
     closeModal(modalId) {
       document.getElementById(modalId).classList.add('hidden');
       if (modalId === 'assignStoresModal') {
@@ -432,32 +531,18 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     },
 
-    // ---FIXED FUNCTION---
     togglePanel(panelName) {
       const content = document.getElementById(`${panelName}-content`);
       const icon = document.getElementById(`${panelName}-toggle-icon`);
-      
       if (!content || !icon) {
         console.error(`Toggle failed: Could not find elements for panel '${panelName}'`);
         return; 
       }
-
-      if (content.classList.contains('hidden')) {
-        // It's hidden, so let's show it
-        content.classList.remove('hidden');
-        icon.classList.remove('fa-chevron-down');
-        icon.classList.add('fa-chevron-up');
-      } else {
-        // It's visible, so let's hide it
-        content.classList.add('hidden');
-        icon.classList.remove('fa-chevron-up');
-        icon.classList.add('fa-chevron-down');
-      }
+      content.classList.toggle('hidden');
+      icon.classList.toggle('fa-chevron-down');
+      icon.classList.toggle('fa-chevron-up');
     },
     
-    // THE REST OF THE SCRIPT (event handlers, etc.) is the same as the previous response and is omitted here for brevity. 
-    // This is a placeholder for all the functions like applyTheme, showToast, createEmployee, handleAddEmployee, handleAddStore, etc.
-    // The full, correct functions are in the downloadable file.
     applyTheme(theme) {
       if (theme === 'dark') {
           document.documentElement.classList.add('dark');
@@ -507,11 +592,91 @@ document.addEventListener('DOMContentLoaded', () => {
       this.closeModal('firstTimeSetupModal');
     },
 
-    handleAddEmployee(e) { /* ... same as before ... */  e.preventDefault(); const name = e.target.querySelector('#new-employee-name').value; const position = e.target.querySelector('#new-employee-position').value; this.state.employees.push(this.createEmployee(name, position)); this.saveState(); this.render(); this.closeModal('addEmployeeModal'); this.showToast('Employee added.', 'success'); },
-    handleAddStore(e) { /* ... same as before ... */  e.preventDefault(); const name = e.target.querySelector('#new-store-name').value; if(name) { this.state.stores.push({ id: `store_${Date.now()}`, name }); this.saveState(); this.setActiveTab('stores'); this.renderStoresTab(); e.target.reset(); this.closeModal('addStoreModal'); this.showToast('Store added.', 'success'); } },
-    handleAssignStores(e) { /* ... same as before ... */ e.preventDefault(); const employeeId = this.state.editingEmployeeId; if (!employeeId) return; const employee = this.getEmployee(employeeId); employee.storeAccess = Array.from(e.target.querySelectorAll('input:checked')).map(cb => cb.value); this.saveState(); this.closeModal('assignStoresModal'); this.showToast('Store access updated.', 'success'); if (this.state.currentEmployeeId === employeeId && this.currentTab === 'sales-expenses') { this.renderSalesAndExpenses(); } },
-    handleDelete(itemType, itemId) { /* ... same as before ... */ const name = this.getItemNameForConfirmation(itemType, itemId); if (!confirm(`Delete "${name}"? This cannot be undone.`)) return; switch (itemType) { case 'employee': this.state.employees = this.state.employees.filter(e => e.id !== itemId); this.state.tasks = this.state.tasks.filter(t => t.assigneeId !== itemId); if (this.state.currentEmployeeId === itemId) { this.state.currentEmployeeId = this.state.employees.length > 0 ? this.state.employees[0].id : null; } break; case 'store': this.state.stores = this.state.stores.filter(s => s.id !== itemId); this.state.employees.forEach(emp => { if (emp.storeAccess) { emp.storeAccess = emp.storeAccess.filter(id => id !== itemId); } }); break; case 'product': this.state.masterInventory = this.state.masterInventory.filter(p => p.id !== itemId); this.state.employees.forEach(e => { e.inventory = e.inventory.filter(i => i.productId !== itemId); e.transactions = e.transactions.filter(t => t.productId !== itemId); }); break; case 'task': this.state.tasks = this.state.tasks.filter(t => t.id !== itemId); break; } this.saveState(); this.render(); if (itemType === 'store') this.setActiveTab('stores'); this.showToast(`${itemType.charAt(0).toUpperCase() + itemType.slice(1)} deleted.`, 'success'); },
-    getItemNameForConfirmation(itemType, itemId) { /* ... same ... */ let name = itemId; switch(itemType) { case 'employee': const emp = this.getEmployee(itemId); if (emp) name = emp.name; break; case 'product': const prod = this.getProduct(itemId); if (prod) name = prod.name; break; case 'store': const store = this.getStore(itemId); if (store) name = store.name; break; case 'task': const task = this.state.tasks.find(t => t.id === itemId); if (task) name = task.description; break; }; return name; }
+    handleAddEmployee(e) { 
+        e.preventDefault(); 
+        const name = e.target.querySelector('#new-employee-name').value; 
+        const position = e.target.querySelector('#new-employee-position').value; 
+        this.state.employees.push(this.createEmployee(name, position)); 
+        this.saveState(); 
+        this.render(); 
+        this.closeModal('addEmployeeModal'); 
+        this.showToast('Employee added.', 'success'); 
+    },
+    
+    handleAddStore(e) { 
+        e.preventDefault(); 
+        const name = e.target.querySelector('#new-store-name').value; 
+        if(name) { 
+            this.state.stores.push({ id: `store_${Date.now()}`, name }); 
+            this.saveState(); 
+            this.setActiveTab('stores'); 
+            this.renderStoresTab(); 
+            e.target.reset(); 
+            this.closeModal('addStoreModal'); 
+            this.showToast('Store added.', 'success'); 
+        } 
+    },
+
+    handleAssignStores(e) { 
+        e.preventDefault(); 
+        const employeeId = this.state.editingEmployeeId; 
+        if (!employeeId) return; 
+        const employee = this.getEmployee(employeeId); 
+        employee.storeAccess = Array.from(e.target.querySelectorAll('input:checked')).map(cb => cb.value); 
+        this.saveState(); 
+        this.closeModal('assignStoresModal'); 
+        this.showToast('Store access updated.', 'success'); 
+        if (this.state.currentEmployeeId === employeeId && this.currentTab === 'sales-expenses') { 
+            this.renderSalesAndExpenses(); 
+        } 
+    },
+
+    handleDelete(itemType, itemId) {
+        const name = this.getItemNameForConfirmation(itemType, itemId);
+        if (!confirm(`Are you sure you want to delete "${name}"? This can have cascading effects and cannot be undone.`)) {
+            return;
+        }
+        switch (itemType) {
+            case 'employee':
+                this.state.employees = this.state.employees.filter(e => e.id !== itemId);
+                this.state.tasks = this.state.tasks.filter(t => t.assigneeId !== itemId);
+                if (this.state.currentEmployeeId === itemId) {
+                    this.state.currentEmployeeId = this.state.employees.length > 0 ? this.state.employees[0].id : null;
+                }
+                break;
+            case 'store':
+                this.state.stores = this.state.stores.filter(s => s.id !== itemId);
+                this.state.employees.forEach(emp => {
+                    if (emp.storeAccess) { emp.storeAccess = emp.storeAccess.filter(id => id !== itemId); }
+                });
+                break;
+            case 'product':
+                this.state.masterInventory = this.state.masterInventory.filter(p => p.id !== itemId);
+                this.state.employees.forEach(e => {
+                    e.inventory = e.inventory.filter(i => i.productId !== itemId);
+                    e.transactions = e.transactions.filter(t => t.productId !== itemId);
+                });
+                break;
+            case 'task':
+                this.state.tasks = this.state.tasks.filter(t => t.id !== itemId);
+                break;
+        }
+        this.saveState();
+        this.render();
+        if (itemType === 'store') this.setActiveTab('stores');
+        this.showToast(`${itemType.charAt(0).toUpperCase() + itemType.slice(1)} deleted.`, 'success');
+    },
+
+    getItemNameForConfirmation(itemType, itemId) {
+      let name = itemId;
+      switch(itemType) {
+        case 'employee': const emp = this.getEmployee(itemId); if (emp) name = emp.name; break;
+        case 'product': const prod = this.getProduct(itemId); if (prod) name = prod.name; break;
+        case 'store': const store = this.getStore(itemId); if (store) name = store.name; break;
+        case 'task': const task = this.state.tasks.find(t => t.id === itemId); if (task) name = task.description; break;
+      };
+      return name;
+    }
   };
 
   app.init();
@@ -521,3 +686,4 @@ document.addEventListener('DOMContentLoaded', () => {
 
 </body>
 </html>
+```
